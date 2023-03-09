@@ -4,6 +4,7 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -123,8 +124,11 @@ response = sorryMessageElement.text
 while response == 'Sorry!' :
     searchElement.click()
     time.sleep(3)
-    sorryMessageElement = driver.find_element(By.XPATH, '//div[contains(@class, "times-unavailable")]//div[contains(@class, "head")]')
-    response = sorryMessageElement.text
+    try:
+        sorryMessageElement = driver.find_element(By.XPATH, '//div[contains(@class, "times-unavailable")]//div[contains(@class, "head")]')
+        response = sorryMessageElement.text
+    except NoSuchElementException: #ignores error
+        response = 'Available'
     ts = time.time()
     date_time = datetime.fromtimestamp(ts)
     print(date_time, 'No Availability')
