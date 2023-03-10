@@ -26,6 +26,9 @@ phoneNumber2 = os.getenv("PHONENUMBER2")
 reservationMonth = 'April'
 reservationDay = '14'
 reservationTime = 'Dinner'
+print(reservationMonth)
+print(reservationDay)
+print(reservationTime)
 
 driver = webdriver.Chrome(options=options)
 driver.get("https://disneyland.disney.go.com/login?appRedirect=%2F")
@@ -76,7 +79,6 @@ while month != reservationMonth :
     #obtains current month selected
     monthElement = driver.find_element(By.XPATH, '(//span[contains(@class, "month-name")])[2]')
     month = monthElement.text
-    print(month)
 
 # clicks on the desired reservation date
 allDateElement = driver.find_elements(By.XPATH, '//finder-modal//td/a[contains(@class, "cell")]')
@@ -84,7 +86,6 @@ allDateElement = driver.find_elements(By.XPATH, '//finder-modal//td/a[contains(@
 for date in allDateElement:
     data=date.text
     if data == reservationDay :
-        print(data)
         date.click()
         break
 
@@ -112,35 +113,54 @@ searchElement = driver.find_element(By.ID, 'search-time-button')
 searchElement.click()
 time.sleep(3)
 
-# prints initial unavailability
-unavailableElement = driver.find_element(By.XPATH, '//div[contains(@class, "times-unavailable")]')
-print(unavailableElement.text)
+# prints initial availability
+timesArr = []
+status = ''
+try:
+    # search for reservation availability
+    reserveElement = driver.find_element(By.XPATH, '//h3[contains(@class, "reserve-title")]')
+    response = reserveElement.text
+    print(response)
 
-# response variable initialized
-sorryMessageElement = driver.find_element(By.XPATH, '//div[contains(@class, "times-unavailable")]//div[contains(@class, "head")]')
-response = sorryMessageElement.text
+    # finds all available times, prints in console and creates array and string for output to user
+    timesElement = driver.find_elements(By.XPATH, '//div[contains(@class, "times")]//button')
+    for times in timesElement:
+        print(times.text)
+        timesArr.append(times.text)
+        timesStr = '\n'.join(timesArr)
+    status = 'Available'
+except NoSuchElementException: #ignores error
+    status = 'Unavailable'  
 
 # while loop to check availability every 60 seconds
-while response == 'Sorry!' :
+while status == 'Unavailable' :
     searchElement.click()
     time.sleep(3)
     try:
-        sorryMessageElement = driver.find_element(By.XPATH, '//div[contains(@class, "times-unavailable")]//div[contains(@class, "head")]')
-        response = sorryMessageElement.text
+        # search for reservation availability
+        reserveElement = driver.find_element(By.XPATH, '//h3[contains(@class, "reserve-title")]')
+        response = reserveElement.text
+
+        # finds all available times, prints in console and creates array and string for output to user
+        timesElement = driver.find_elements(By.XPATH, '//div[contains(@class, "times")]//button')
+        for times in timesElement:
+            timesArr.append(times.text)
+            timesStr = '\n'.join(timesArr)
+        status = 'Available'
     except NoSuchElementException: #ignores error
-        response = 'Available'
-    ts = time.time()
-    date_time = datetime.fromtimestamp(ts)
-    print(date_time, 'No Availability')
-    time.sleep(57)
+        status = 'Unavailable'  
+        ts = time.time()
+        date_time = datetime.fromtimestamp(ts)
+        print(date_time, status)
+        time.sleep(57)
 
 # alerts to notify availability
 ts = time.time()
 date_time = datetime.fromtimestamp(ts)
-print(date_time, 'Available!!')
+print(date_time, "Lamplight Lounge available on {} {} for times below:\n{}".format(reservationMonth, reservationDay, timesStr))
 
 # iMessage alerts
-message = "\"Lamplight Lounge available on {} {} for {}!!\"".format(reservationMonth, reservationDay, reservationTime)
+message = "\"Lamplight Lounge available on {} {} for times below:\n{}\"".format(reservationMonth, reservationDay, timesStr)
 os.system(
     "osascript sendMessage.applescript {} {}"
         .format(phoneNumber1, message)
